@@ -18,6 +18,7 @@ const staffList = [
     staff_kana: "ナラサキ シンイチ",
     contract_type: "時給",
     unit_price: 4300,
+    sales_person: "川村 駿介",
     status: "稼働中",
     careerSheetStatus: {
       gakureki: true,
@@ -36,6 +37,7 @@ const staffList = [
     staff_kana: "カタセ ヒロヤ",
     contract_type: "時給",
     unit_price: 5200,
+    sales_person: "岩崎 泰成",
     status: "稼働中（異動）",
     careerSheetStatus: {
       gakureki: true,
@@ -54,6 +56,7 @@ const staffList = [
     staff_kana: "イシダ タカヒロ",
     contract_type: "時給",
     unit_price: 8000,
+    sales_person: "藤田 悠真",
     status: "異動予定（本人希望）",
     careerSheetStatus: {
       gakureki: true,
@@ -72,6 +75,7 @@ const staffList = [
     staff_kana: "サトウ ハナコ",
     contract_type: "月給",
     unit_price: 700000,
+    sales_person: "久髙 陽子",
     status: "異動予定（終了確定）",
     careerSheetStatus: {
       gakureki: true,
@@ -90,6 +94,7 @@ const staffList = [
     staff_kana: "スズキ イチロウ",
     contract_type: "時給",
     unit_price: 3000,
+    sales_person: "久高 将真",
     status: "休業（産休・育休、傷病）",
     careerSheetStatus: {
       gakureki: false,
@@ -108,6 +113,7 @@ const staffList = [
     staff_kana: "タカハシ ジロウ",
     contract_type: "月給",
     unit_price: 900000,
+    sales_person: "鈴木 祥",
     status: "休業（案件未決定）",
     careerSheetStatus: {
       gakureki: true,
@@ -126,6 +132,7 @@ const staffList = [
     staff_kana: "タナカ サブロウ",
     contract_type: "時給",
     unit_price: 6700,
+    sales_person: "川村 駿介",
     status: "稼働中",
     careerSheetStatus: {
       gakureki: true,
@@ -144,6 +151,7 @@ const staffList = [
     staff_kana: "ヤマモト シロウ",
     contract_type: "-",
     unit_price: 0,
+    sales_person: "岩崎 泰成",
     status: "退職",
     careerSheetStatus: {
       gakureki: true,
@@ -162,6 +170,7 @@ const staffList = [
     staff_kana: "ナカムラ ゴロウ",
     contract_type: "時給",
     unit_price: 3900,
+    sales_person: "藤田 悠真",
     status: "稼働中（異動）",
     careerSheetStatus: {
       gakureki: false,
@@ -180,6 +189,7 @@ const staffList = [
     staff_kana: "コバヤシ ロクロウ",
     contract_type: "月給",
     unit_price: 800000,
+    sales_person: "久髙 陽子",
     status: "稼働中",
     careerSheetStatus: {
       gakureki: true,
@@ -410,13 +420,12 @@ export default function StaffPage() {
               <th className="px-3 py-4 text-center w-10 text-xs font-bold text-gray-700 whitespace-nowrap">
                 <input type="checkbox" checked={isAllChecked} ref={el => { if (el) el.indeterminate = isIndeterminate; }} onChange={handleCheckAll} />
               </th>
-              <th className="px-2 py-4 text-left text-sm font-bold text-gray-700 whitespace-nowrap w-24">クライアント番号</th>
-              <th className="px-2 py-4 text-left text-sm font-bold text-gray-700 whitespace-nowrap w-32">クライアント名</th>
-              <th className="px-2 py-4 text-left text-sm font-bold text-gray-700 whitespace-nowrap w-24">スタッフ番号</th>
-              <th className="px-2 py-4 text-left text-sm font-bold text-gray-700 whitespace-nowrap">スタッフ氏名</th>
               <th className="px-2 py-4 text-left text-sm font-bold text-gray-700 whitespace-nowrap w-32">ステータス</th>
+              <th className="px-2 py-4 text-left text-sm font-bold text-gray-700 whitespace-nowrap">スタッフ</th>
+              <th className="px-2 py-4 text-left text-sm font-bold text-gray-700 whitespace-nowrap w-32">クライアント</th>
               <th className="px-2 py-4 text-left text-sm font-bold text-gray-700 whitespace-nowrap w-20">契約形態</th>
               <th className="px-2 py-4 text-left text-sm font-bold text-gray-700 whitespace-nowrap w-28">請求単価</th>
+              <th className="px-2 py-4 text-left text-sm font-bold text-gray-700 whitespace-nowrap w-28">営業担当</th>
               <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 flex items-center gap-1">
                 キャリアシート更新情報
                 <span className="relative group cursor-pointer">
@@ -426,6 +435,7 @@ export default function StaffPage() {
                   </span>
                 </span>
               </th>
+              <th className="px-2 py-4 text-center text-sm font-bold text-gray-700 whitespace-nowrap w-20">マイページ</th>
               <th className="px-2 py-4 text-center text-sm font-bold text-gray-700 whitespace-nowrap w-12">詳細</th>
             </tr>
           </thead>
@@ -437,21 +447,26 @@ export default function StaffPage() {
                   <td className="px-3 py-4 text-center w-10 text-sm">
                     <input type="checkbox" checked={selected.includes(staff.id)} onChange={() => handleCheck(staff.id)} />
                   </td>
-                  <td className="px-2 py-4 text-sm text-gray-900 whitespace-nowrap w-24">{staff.client_number}</td>
-                  <td className="px-2 py-4 text-sm text-gray-900 whitespace-nowrap w-32">{staff.client_name}</td>
-                  <td className="px-2 py-4 text-sm text-gray-900 whitespace-nowrap w-24">{staff.staff_number}</td>
-                  <td className="px-2 py-4 text-sm text-gray-900 whitespace-nowrap w-40">
-                    <div className="font-bold">{staff.staff_name}</div>
-                    <div className="text-xs text-gray-400 mt-0.5">{staff.staff_kana}</div>
-                  </td>
                   <td className="px-2 py-4 text-sm text-gray-900 whitespace-nowrap w-32">
                     <span className={`inline-block border text-xs font-bold px-2 py-0.5 rounded-full ${getStatusColor(staff.status)}`}>
                       社員：{staff.status}
                     </span>
                   </td>
+                  <td className="px-2 py-4 text-sm text-gray-900 whitespace-nowrap w-40">
+                    <div className="text-xs text-gray-500 mb-1">{staff.staff_number}</div>
+                    <div className="font-bold">{staff.staff_name}</div>
+                    <div className="text-xs text-gray-400 mt-0.5">{staff.staff_kana}</div>
+                  </td>
+                  <td className="px-2 py-4 text-sm text-gray-900 whitespace-nowrap w-32">
+                    <div className="text-xs text-gray-500 mb-1">{staff.client_number}</div>
+                    <div className="font-bold">{staff.client_name}</div>
+                  </td>
                   <td className="px-2 py-4 text-sm text-gray-900 whitespace-nowrap w-20">{staff.contract_type}</td>
                   <td className="px-2 py-4 text-sm text-gray-900 whitespace-nowrap w-28">
                     {staff.unit_price.toLocaleString()}円
+                  </td>
+                  <td className="px-2 py-4 text-sm text-gray-900 whitespace-nowrap w-28">
+                    {staff.sales_person}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
                     <div className="flex items-start gap-2">
@@ -478,13 +493,15 @@ export default function StaffPage() {
                           )}
                         </span>
                       )}
-                      <button 
-                        className="text-blue-600 hover:text-blue-800 text-xs px-2 py-1 border border-blue-300 rounded hover:bg-blue-50 transition-colors"
-                        onClick={() => window.open(`/mypage/staff/${staff.id}`, '_blank')}
-                      >
-                        マイページ
-                      </button>
                     </div>
+                  </td>
+                  <td className="px-2 py-4 text-center w-20">
+                    <button 
+                      className="text-blue-600 hover:text-blue-800 text-xs px-2 py-1 border border-blue-300 rounded hover:bg-blue-50 transition-colors whitespace-nowrap"
+                      onClick={() => window.open(`/mypage/staff/${staff.id}`, '_blank')}
+                    >
+                      マイページ
+                    </button>
                   </td>
                   <td className="px-2 py-4 text-center w-12">
                     <button onClick={() => setDrawerStaff(staff)} className="text-blue-600 hover:text-blue-800">
