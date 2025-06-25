@@ -3,9 +3,11 @@ import Image from "next/image";
 import { useState } from "react";
 import { Transition } from "@headlessui/react";
 import { usePathname } from "next/navigation";
-import { mdiViewDashboard, mdiAccountGroup, mdiClockOutline, mdiCog } from "@mdi/js";
+import { mdiViewDashboard, mdiAccountGroup, mdiClockOutline, mdiCog, mdiHome, mdiFileDocument, mdiFileDocumentEditOutline, mdiCheckCircle, mdiCardAccountDetailsOutline, mdiHeadset, mdiLogout, mdiMenu, mdiClose } from "@mdi/js";
+import Icon from '@mdi/react';
+import Link from "next/link";
 
-const menuGroups = [
+const adminMenuGroups = [
   {
     label: "全体管理",
     items: [
@@ -28,6 +30,29 @@ const menuGroups = [
     label: "各種設定",
     items: [
       { label: "タイムカード設定", href: "/admin/settings", icon: mdiCog },
+    ],
+  },
+];
+
+const mypageMenuGroups = [
+  {
+    label: "勤怠作業",
+    items: [
+      { label: "締め作業", href: "/mypage/closing", icon: mdiCheckCircle },
+    ],
+  },
+  {
+    label: "プロフィール管理",
+    items: [
+      { label: "基本情報", href: "/mypage/settings", icon: mdiCardAccountDetailsOutline },
+      { label: "スキル情報", href: "/mypage/skills", icon: mdiFileDocumentEditOutline },
+    ],
+  },
+  {
+    label: "仲間を探す",
+    items: [
+      { label: "スキルから探す", href: "/mypage/search-by-skill", icon: mdiAccountGroup },
+      { label: "クライアントから探す", href: "/mypage/search-by-client", icon: mdiCog },
     ],
   },
 ];
@@ -89,6 +114,13 @@ export default function AdminLayout({
   const [open, setOpen] = useState(true);
   const pathname = usePathname();
   const breadcrumbs = getBreadcrumbs(pathname);
+  
+  // /admin/staff/skills/ページの場合のみマイページ側のメニューを表示
+  const isSkillsPage = pathname.startsWith('/admin/staff/skills');
+  const menuGroups = isSkillsPage ? mypageMenuGroups : adminMenuGroups;
+  const userName = isSkillsPage ? "リツアン 次郎" : "片桐 雅人";
+  const userKana = isSkillsPage ? "リツアン ジロウ" : "カタギリ マサト";
+  const userNumber = isSkillsPage ? "（2459）" : "（58）";
 
   return (
     <div>
@@ -119,10 +151,10 @@ export default function AdminLayout({
           </div>
           <div className="mt-6 text-center">
             <div className="text-lg font-bold">
-              片桐 雅人
-              <span className="text-gray-400 font-normal ml-1">（58）</span>
+              {userName}
+              <span className="text-gray-400 font-normal ml-1">{userNumber}</span>
             </div>
-            <div className="text-sm text-gray-400 mt-1">カタギリ マサト</div>
+            <div className="text-sm text-gray-400 mt-1">{userKana}</div>
           </div>
           <nav className="flex-1 overflow-y-auto">
             <ul className="px-4 space-y-4">
