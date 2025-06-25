@@ -20,7 +20,7 @@ export default function Home() {
           <FaUser />
           マイページ（社員）
         </Link>
-        <Link href="/mypage" className="flex items-center justify-center gap-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold rounded-lg px-8 py-4 text-lg shadow-lg transition-all text-center">
+        <Link href="/applicant" className="flex items-center justify-center gap-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold rounded-lg px-8 py-4 text-lg shadow-lg transition-all text-center">
           <FaFileAlt />
           マイページ（応募者）
         </Link>
