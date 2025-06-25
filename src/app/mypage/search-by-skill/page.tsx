@@ -345,7 +345,6 @@ const renderMainSkills = (mainSkills: any, jobMajor: string) => {
     tools: "ツール",
     experience: "経験業務",
     // その他
-    tools: "ツール"
   };
   return (
     <div className="space-y-1">
@@ -422,7 +421,9 @@ const SkillSelectionModal = ({
   otherText?: string;
   setOtherText?: (text: string) => void;
 }) => {
-  const allOptions = isGrouped ? Object.values(options).flat().filter(o => o && o !== 'その他（フリーテキスト）') as string[] : options.filter(o => o !== 'その他（フリーテキスト）') as string[];
+  const allOptions = isGrouped
+    ? (Object.values(options).flat() as string[]).filter(o => o && o !== 'その他（フリーテキスト）')
+    : (options as string[]).filter(o => o !== 'その他（フリーテキスト）');
 
   const handleToggleSelection = (item: string) => {
     setSelectedOptions(
