@@ -14,6 +14,12 @@ const menuGroups = [
       { label: "スキル情報", href: "/applicant/skills", icon: mdiFileDocumentEditOutline },
     ],
   },
+  {
+    label: "手続き",
+    items: [
+      { label: "入社手続き", href: "/applicant/procedure/onboarding", icon: mdiFileDocumentEditOutline },
+    ],
+  },
 ];
 
 const Sidebar = ({ isSidebarOpen, toggleSidebar }: { isSidebarOpen: boolean, toggleSidebar: () => void }) => {
