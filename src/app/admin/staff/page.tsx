@@ -7,13 +7,14 @@ import { AiOutlineInfoCircle, AiOutlineFileDone, AiOutlineUser, AiOutlineIdcard,
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import Icon from '@mdi/react';
-import { mdiPencil, mdiFilePdfBox, mdiPlus, mdiChevronLeft, mdiMagnifyPlus, mdiMagnifyMinus, mdiDownload, mdiDotsVertical } from '@mdi/js';
+import { mdiPencil, mdiFilePdfBox, mdiPlus, mdiChevronLeft, mdiMagnifyPlus, mdiMagnifyMinus, mdiDownload, mdiDotsVertical, mdiClose } from '@mdi/js';
 import Image from 'next/image';
 import { useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
+import { jobCategories, JobCategory } from "@/data/jobCategories";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 
@@ -563,6 +564,41 @@ export default function StaffPage() {
   const [drawerStaff, setDrawerStaff] = useState<any>(null);
   const [showTooltip, setShowTooltip] = useState<number | null>(null);
   const [perPage, setPerPage] = useState(20);
+  // メール送信ダイアログ用
+  const [isMailDialogOpen, setIsMailDialogOpen] = useState(false);
+  const [mailType, setMailType] = useState<'remind' | 'update'>('remind');
+  const [subject, setSubject] = useState('【リツアンSTC】キャリアシート登録・更新のお願い');
+  const [body, setBody] = useState('お世話になっております。\nマイページにて「学歴」「最寄駅」「メインスキル」「職務経歴」（必要に応じて「資格」「語学力」も）をご登録・ご更新ください。\nご不明点があればご連絡ください。');
+  // 検索フォーム用 state 追加
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [statusTarget, setStatusTarget] = useState<'all'|'employee'|'applicant'>('all');
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [isJobModalOpen, setIsJobModalOpen] = useState(false);
+  const [selectedMajor, setSelectedMajor] = useState<JobCategory | null>(null);
+  const [selectedMediums, setSelectedMediums] = useState<JobCategory[]>([]);
+  const [statusModalStep, setStatusModalStep] = useState<'target' | 'status'>('target');
+  const baseStatusOptions = [
+    '稼働中',
+    '稼働中（異動）',
+    '異動予定（本人希望）',
+    '異動予定（終了確定）',
+    '休業（産休・育休、傷病）',
+    '休業（案件未決定）',
+    '退職',
+  ];
+  const applicantStatusOptions = [
+    'エントリー着',
+    '初回連絡完了',
+    '面談日時確定',
+    '面談完了',
+    '提案完了',
+    '辞退',
+    '不採用',
+  ];
+  const statusOptionsForTarget =
+    statusTarget === 'all' ? [...baseStatusOptions, ...applicantStatusOptions]
+    : statusTarget === 'employee' ? baseStatusOptions
+    : applicantStatusOptions;
 
   const isAllChecked = selected.length === staffList.length;
   const isIndeterminate = selected.length > 0 && selected.length < staffList.length;
@@ -588,6 +624,56 @@ export default function StaffPage() {
     window.open('/admin/staff/skills', '_blank');
   };
 
+  // ラジオ切替時に件名・本文を自動変更
+  const handleMailTypeChange = (type: 'remind' | 'update') => {
+    setMailType(type);
+    if (type === 'remind') {
+      setSubject('【リツアンSTC】キャリアシート登録・更新のお願い');
+      setBody('お世話になっております。\nマイページにて「学歴」「最寄駅」「メインスキル」「職務経歴」（必要に応じて「資格」「語学力」も）をご登録・ご更新ください。\nご不明点があればご連絡ください。');
+    } else {
+      setSubject('【リツアンSTC】職務経歴書の追加・更新のお願い');
+      setBody('お世話になっております。\n現場異動等に伴い、職務経歴書の追加・更新（必要に応じてその他項目も）をお願いいたします。\nご対応のほどよろしくお願いいたします。');
+    }
+  };
+
+  // ステータス選択の全選択/全解除
+  const handleSelectAllStatuses = () => {
+    if (selectedStatuses.length === statusOptionsForTarget.length) {
+      setSelectedStatuses([]);
+    } else {
+      setSelectedStatuses(statusOptionsForTarget);
+    }
+  };
+
+  // ステータス選択の切り替え
+  const handleStatusToggle = (status: string) => {
+    setSelectedStatuses(prev =>
+      prev.includes(status)
+        ? prev.filter(s => s !== status)
+        : [...prev, status]
+    );
+  };
+
+  // ステータス選択のクリア
+  const handleClearStatuses = () => {
+    setSelectedStatuses([]);
+  };
+
+  // 職種選択の全選択/全解除
+  const handleSelectAllMediums = () => {
+    if (!selectedMajor || !selectedMajor.children) return;
+
+    const areAllSelected =
+      selectedMajor.children.length > 0 &&
+      selectedMediums.length === selectedMajor.children.length;
+
+    if (areAllSelected) {
+      setSelectedMediums([]);
+    } else {
+      setSelectedMediums(selectedMajor.children);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* タイトル＋アイコン */}
@@ -601,8 +687,8 @@ export default function StaffPage() {
           <h2 className="text-xl font-bold">検索</h2>
         </div>
         <form>
-          {/* 1段目: 5項目＋職種 */}
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+          {/* 1段目: 5項目 */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="flex flex-col gap-1">
               <label className="text-base font-bold text-gray-700 whitespace-nowrap">クライアント番号</label>
               <input className="border rounded px-3 py-2 text-sm" placeholder="クライアント番号" />
@@ -627,32 +713,6 @@ export default function StaffPage() {
                 <option>月給</option>
               </select>
             </div>
-            {/* 職種追加 */}
-            <div className="flex flex-col gap-1">
-              <label className="text-base font-bold text-gray-700 whitespace-nowrap">職種</label>
-              <select className="border rounded px-3 py-2 text-sm">
-                <option>選択してください</option>
-                <option>IT</option>
-                <option>機電</option>
-                <option>建築</option>
-                <option>その他</option>
-                <option>未登録</option>
-              </select>
-            </div>
-            {/* ステータス追加 */}
-            <div className="flex flex-col gap-1">
-              <label className="text-base font-bold text-gray-700 whitespace-nowrap">ステータス</label>
-              <select className="border rounded px-3 py-2 text-sm">
-                <option>指定なし</option>
-                <option>稼働中</option>
-                <option>稼働中（異動）</option>
-                <option>異動予定（本人希望）</option>
-                <option>異動予定（終了確定）</option>
-                <option>休業（産休・育休、傷病）</option>
-                <option>休業（案件未決定）</option>
-                <option>退職</option>
-              </select>
-            </div>
           </div>
           {/* 2段目: 2項目 */}
           <div className="flex flex-wrap gap-4 mt-4">
@@ -675,6 +735,63 @@ export default function StaffPage() {
                 isClearable
               />
             </div>
+          </div>
+          {/* ステータス選択 */}
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">ステータス</label>
+            <button
+              type="button"
+              onClick={() => {
+                setIsStatusModalOpen(true);
+              }}
+              className="relative w-full flex items-center border rounded-md p-2.5 text-left text-gray-900 bg-gray-50/50 hover:bg-gray-100 transition"
+            >
+              {selectedStatuses.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  {selectedStatuses.map(status => (
+                    <span key={status} className="bg-gray-200 text-gray-800 text-xs font-medium px-2 py-1 rounded-full">
+                      {status}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-blue-600 font-medium">
+                  {statusTarget === 'all' ? '全員' : statusTarget === 'employee' ? '社員のみ' : '応募者のみ'}で検索
+                </span>
+              )}
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
+            </button>
+          </div>
+          {/* 職種選択 */}
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">職種</label>
+            <button
+              type="button"
+              onClick={() => setIsJobModalOpen(true)}
+              className="relative w-full flex items-center border rounded-md p-2.5 text-left text-gray-900 bg-gray-50/50 hover:bg-gray-100 transition"
+            >
+              {selectedMediums.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-bold bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">{selectedMajor?.name}</span>
+                  {selectedMediums.map(m => (
+                    <span key={m.id} className="bg-gray-200 text-gray-800 text-xs font-medium px-2 py-1 rounded-full">
+                      {m.name}
+                    </span>
+                  ))}
+                </div>
+              ) : selectedMajor ? (
+                <span className="text-blue-600 font-medium">
+                  {selectedMajor.name}で検索
+                </span>
+              ) : (
+                <span>職種を選択してください</span>
+              )}
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
+            </button>
           </div>
           <div className="flex justify-end mt-4">
             <button type="submit" className="bg-blue-600 text-white rounded px-6 py-2 text-sm font-semibold shadow hover:bg-blue-700 transition">検索</button>
@@ -942,10 +1059,515 @@ export default function StaffPage() {
                   </div>
                 </div>
               </div>
+
+              {/* メインスキル */}
+              <InfoCard title="メインスキル" gridCols={1} editable={false}>
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    <SkillTag name="Java" years={5} />
+                    <SkillTag name="Spring Boot" years={3} />
+                    <SkillTag name="PostgreSQL" years={4} />
+                    <SkillTag name="Docker" years={2} />
+                    <SkillTag name="AWS" years={3} />
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    スキルレベル: 上級者レベル
+                  </div>
+                </div>
+              </InfoCard>
+
+              {/* キャリアシートPDF */}
+              <InfoCard title="キャリアシート" gridCols={1} editable={false}>
+                <div className="space-y-6">
+                  {/* 1つ目 */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Icon path={mdiFilePdfBox} size={1.2} className="text-red-500" />
+                        <span className="text-sm font-medium">R.H_2050.pdf</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button className="text-blue-600 hover:text-blue-800 text-xs px-2 py-1 border border-blue-300 rounded hover:bg-blue-50 transition-colors">
+                          <Icon path={mdiDownload} size={0.8} className="mr-1" />
+                          ダウンロード
+                        </button>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      最終更新: 2024年3月15日
+                    </div>
+                    {/* PDFプレビュー */}
+                    <div className="border rounded-lg overflow-hidden" style={{ height: '300px' }}>
+                      <PdfViewer 
+                        pdfUrl="/R.H_2050.pdf" 
+                        title="キャリアシート" 
+                      />
+                    </div>
+                  </div>
+                  {/* 2つ目 */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Icon path={mdiFilePdfBox} size={1.2} className="text-red-500" />
+                        <span className="text-sm font-medium">R.H_2050（その他）.pdf</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button className="text-blue-600 hover:text-blue-800 text-xs px-2 py-1 border border-blue-300 rounded hover:bg-blue-50 transition-colors">
+                          <Icon path={mdiDownload} size={0.8} className="mr-1" />
+                          ダウンロード
+                        </button>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      最終更新: 2024年3月15日
+                    </div>
+                    {/* PDFプレビュー */}
+                    <div className="border rounded-lg overflow-hidden" style={{ height: '300px' }}>
+                      <PdfViewer 
+                        pdfUrl="/R.H_2050（その他）.pdf" 
+                        title="キャリアシート（その他）" 
+                      />
+                    </div>
+                  </div>
+                </div>
+              </InfoCard>
             </div>
           </div>
         )}
       </div>
+
+      {/* ステータス選択モーダル */}
+      <Transition appear show={isStatusModalOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={() => setIsStatusModalOpen(false)}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/30" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title as="h3" className="text-lg font-bold leading-6 text-gray-900 flex justify-between items-center">
+                    ステータスを選択
+                    <button onClick={() => setIsStatusModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                      <Icon path={mdiClose} size={1} />
+                    </button>
+                  </Dialog.Title>
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4" style={{minHeight: '400px'}}>
+                    {/* 対象者 */}
+                    <div className="border-r pr-4">
+                      <div className="flex items-center border-b pb-2 mb-2" style={{ minHeight: '42px' }}>
+                        <h4 className="text-sm font-semibold text-gray-500">対象者</h4>
+                      </div>
+                      <ul>
+                        <li>
+                          <label className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 cursor-pointer transition-colors ${statusTarget === 'all' ? 'bg-blue-50' : 'hover:bg-gray-100'}`}>
+                            <input
+                              type="radio"
+                              name="statusTarget"
+                              value="all"
+                              checked={statusTarget === 'all'}
+                              onChange={() => {
+                                setStatusTarget('all');
+                                setSelectedStatuses([]);
+                              }}
+                              className="form-radio h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                            />
+                            <span className={`${statusTarget === 'all' ? 'text-blue-700 font-bold' : 'text-gray-900'}`}>全員</span>
+                          </label>
+                        </li>
+                        <li>
+                          <label className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 cursor-pointer transition-colors ${statusTarget === 'employee' ? 'bg-blue-50' : 'hover:bg-gray-100'}`}>
+                            <input
+                              type="radio"
+                              name="statusTarget"
+                              value="employee"
+                              checked={statusTarget === 'employee'}
+                              onChange={() => {
+                                setStatusTarget('employee');
+                                setSelectedStatuses([]);
+                              }}
+                              className="form-radio h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                            />
+                            <span className={`${statusTarget === 'employee' ? 'text-blue-700 font-bold' : 'text-gray-900'}`}>社員のみ</span>
+                          </label>
+                        </li>
+                        <li>
+                          <label className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 cursor-pointer transition-colors ${statusTarget === 'applicant' ? 'bg-blue-50' : 'hover:bg-gray-100'}`}>
+                            <input
+                              type="radio"
+                              name="statusTarget"
+                              value="applicant"
+                              checked={statusTarget === 'applicant'}
+                              onChange={() => {
+                                setStatusTarget('applicant');
+                                setSelectedStatuses([]);
+                              }}
+                              className="form-radio h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                            />
+                            <span className={`${statusTarget === 'applicant' ? 'text-blue-700 font-bold' : 'text-gray-900'}`}>応募者のみ</span>
+                          </label>
+                        </li>
+                      </ul>
+                    </div>
+
+                    {/* ステータス */}
+                    <div className="border-r pr-4">
+                      <div className="flex items-center gap-3 border-b pb-2 mb-2" style={{ minHeight: '42px' }}>
+                        <input
+                          id="select-all-statuses"
+                          type="checkbox"
+                          className="form-checkbox h-4 w-4 text-blue-600 rounded disabled:bg-gray-200"
+                          checked={
+                            statusOptionsForTarget.length > 0 &&
+                            selectedStatuses.length === statusOptionsForTarget.length
+                          }
+                          onChange={handleSelectAllStatuses}
+                          disabled={statusOptionsForTarget.length === 0}
+                        />
+                        <label
+                          htmlFor="select-all-statuses"
+                          className="text-sm font-semibold text-gray-500 cursor-pointer"
+                        >
+                          ステータス
+                        </label>
+                      </div>
+
+                      {statusOptionsForTarget.length > 0 ? (
+                        <div className="h-full overflow-y-auto" style={{maxHeight: '350px'}}>
+                          {statusTarget === 'all' && (
+                            <>
+                              {/* 社員ステータス */}
+                              <div className="mb-3">
+                                <div className="bg-gray-50 px-2 py-1 mb-1 rounded text-xs">
+                                  <h5 className="text-xs font-medium text-gray-600">社員</h5>
+                                </div>
+                                <ul className="space-y-0.5">
+                                  {baseStatusOptions.map(status => (
+                                    <li key={status}>
+                                      <label className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-gray-100 cursor-pointer">
+                                        <input
+                                          type="checkbox"
+                                          className="form-checkbox h-3 w-3 text-blue-600 rounded"
+                                          checked={selectedStatuses.includes(status)}
+                                          onChange={() => handleStatusToggle(status)}
+                                        />
+                                        <span className="text-xs">{status}</span>
+                                      </label>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                              
+                              {/* 応募者ステータス */}
+                              <div>
+                                <div className="bg-gray-50 px-2 py-1 mb-1 rounded text-xs">
+                                  <h5 className="text-xs font-medium text-gray-600">応募者</h5>
+                                </div>
+                                <ul className="space-y-0.5">
+                                  {applicantStatusOptions.map(status => (
+                                    <li key={status}>
+                                      <label className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-gray-100 cursor-pointer">
+                                        <input
+                                          type="checkbox"
+                                          className="form-checkbox h-3 w-3 text-blue-600 rounded"
+                                          checked={selectedStatuses.includes(status)}
+                                          onChange={() => handleStatusToggle(status)}
+                                        />
+                                        <span className="text-xs">{status}</span>
+                                      </label>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </>
+                          )}
+                          
+                          {statusTarget === 'employee' && (
+                            <div>
+                              <div className="bg-gray-50 px-2 py-1 mb-1 rounded text-xs">
+                                <h5 className="text-xs font-medium text-gray-600">社員</h5>
+                              </div>
+                              <ul className="space-y-0.5">
+                                {baseStatusOptions.map(status => (
+                                  <li key={status}>
+                                    <label className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-gray-100 cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        className="form-checkbox h-3 w-3 text-blue-600 rounded"
+                                        checked={selectedStatuses.includes(status)}
+                                        onChange={() => handleStatusToggle(status)}
+                                      />
+                                      <span className="text-xs">{status}</span>
+                                    </label>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          
+                          {statusTarget === 'applicant' && (
+                            <div>
+                              <div className="bg-gray-50 px-2 py-1 mb-1 rounded text-xs">
+                                <h5 className="text-xs font-medium text-gray-600">応募者</h5>
+                              </div>
+                              <ul className="space-y-0.5">
+                                {applicantStatusOptions.map(status => (
+                                  <li key={status}>
+                                    <label className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-gray-100 cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        className="form-checkbox h-3 w-3 text-blue-600 rounded"
+                                        checked={selectedStatuses.includes(status)}
+                                        onChange={() => handleStatusToggle(status)}
+                                      />
+                                      <span className="text-xs">{status}</span>
+                                    </label>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-400 h-full flex items-center justify-center">
+                          まず対象者を選択してください
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* 選択済み */}
+                    <div>
+                      <div className="flex items-center border-b pb-2 mb-2" style={{ minHeight: '42px' }}>
+                        <h4 className="text-sm font-semibold text-gray-500">選択中のステータス</h4>
+                      </div>
+                      {selectedStatuses.length > 0 ? (
+                        <ul className="h-full overflow-y-auto" style={{maxHeight: '350px'}}>
+                          {selectedStatuses.map(status => (
+                            <li key={`selected-${status}`} className="flex items-center justify-between px-2 py-1 bg-gray-50 rounded-md mb-1">
+                              <span className="text-sm">{status}</span>
+                              <button
+                                onClick={() => setSelectedStatuses(prev => prev.filter(s => s !== status))}
+                                className="text-gray-400 hover:text-red-500"
+                              >
+                                <Icon path={mdiClose} size={0.7} />
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="text-sm text-gray-400 h-full flex items-center justify-center">
+                          ステータスから選択してください
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex justify-end gap-4 border-t pt-4">
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                      onClick={() => {
+                        setSelectedStatuses([]);
+                      }}
+                    >
+                      クリア
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                      onClick={() => setIsStatusModalOpen(false)}
+                    >
+                      決定
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
+      {/* 職種選択モーダル */}
+      <Transition appear show={isJobModalOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={() => setIsJobModalOpen(false)}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/30" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title as="h3" className="text-lg font-bold leading-6 text-gray-900 flex justify-between items-center">
+                    職種を選択
+                    <button onClick={() => setIsJobModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                      <Icon path={mdiClose} size={1} />
+                    </button>
+                  </Dialog.Title>
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4" style={{minHeight: '400px'}}>
+                    {/* 職種（大） */}
+                    <div className="border-r pr-4">
+                      <div className="flex items-center border-b pb-2 mb-2" style={{ minHeight: '42px' }}>
+                        <h4 className="text-sm font-semibold text-gray-500">職種（大）</h4>
+                      </div>
+                      <ul>
+                        {jobCategories.map(major => (
+                          <li key={major.id}>
+                            <label className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 cursor-pointer transition-colors ${selectedMajor?.id === major.id ? 'bg-blue-50' : 'hover:bg-gray-100'}`}>
+                              <input
+                                type="radio"
+                                name="major-category"
+                                className="form-radio h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                checked={selectedMajor?.id === major.id}
+                                onChange={() => {
+                                  setSelectedMajor(major);
+                                  setSelectedMediums([]);
+                                }}
+                              />
+                              <span className={`${selectedMajor?.id === major.id ? 'text-blue-700 font-bold' : 'text-gray-900'}`}>{major.name}</span>
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* 職種（中） */}
+                    <div className="border-r pr-4">
+                      <div className="flex items-center gap-3 border-b pb-2 mb-2" style={{ minHeight: '42px' }}>
+                        <input
+                          id="select-all-mediums"
+                          type="checkbox"
+                          className="form-checkbox h-4 w-4 text-blue-600 rounded disabled:bg-gray-200"
+                          checked={
+                            !!selectedMajor?.children &&
+                            selectedMajor.children.length > 0 &&
+                            selectedMediums.length === selectedMajor.children.length
+                          }
+                          onChange={handleSelectAllMediums}
+                          disabled={!selectedMajor?.children || selectedMajor.children.length === 0}
+                        />
+                        <label
+                          htmlFor="select-all-mediums"
+                          className="text-sm font-semibold text-gray-500 cursor-pointer"
+                        >
+                          職種（中）
+                        </label>
+                      </div>
+
+                      {selectedMajor?.children && selectedMajor.children.length > 0 ? (
+                        <ul className="h-full overflow-y-auto" style={{maxHeight: '350px'}}>
+                          {selectedMajor.children.map(medium => (
+                            <li key={medium.id}>
+                              <label className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  className="form-checkbox h-4 w-4 text-blue-600 rounded"
+                                  checked={selectedMediums.some(m => m.id === medium.id)}
+                                  onChange={() => {
+                                    setSelectedMediums(prev =>
+                                      prev.some(m => m.id === medium.id)
+                                        ? prev.filter(m => m.id !== medium.id)
+                                        : [...prev, medium]
+                                    )
+                                  }}
+                                />
+                                <span className="text-sm">{medium.name}</span>
+                              </label>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="text-sm text-gray-400 h-full flex items-center justify-center">
+                          まず職種（大）を選択してください
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* 選択済み */}
+                    <div>
+                      <div className="flex items-center border-b pb-2 mb-2" style={{ minHeight: '42px' }}>
+                        <h4 className="text-sm font-semibold text-gray-500">選択中の職種</h4>
+                      </div>
+                      {selectedMediums.length > 0 ? (
+                        <ul className="h-full overflow-y-auto" style={{maxHeight: '350px'}}>
+                          {selectedMediums.map(m => (
+                            <li key={`selected-${m.id}`} className="flex items-center justify-between px-2 py-1 bg-gray-50 rounded-md mb-1">
+                              <span className="text-sm">{m.name}</span>
+                              <button
+                                onClick={() => setSelectedMediums(prev => prev.filter(p => p.id !== m.id))}
+                                className="text-gray-400 hover:text-red-500"
+                              >
+                                <Icon path={mdiClose} size={0.7} />
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="text-sm text-gray-400 h-full flex items-center justify-center">
+                          職種（中）から選択してください
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex justify-end gap-4 border-t pt-4">
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                      onClick={() => {
+                        setSelectedMajor(null);
+                        setSelectedMediums([]);
+                      }}
+                    >
+                      クリア
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                      onClick={() => setIsJobModalOpen(false)}
+                    >
+                      決定
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
     </div>
   );
 } 

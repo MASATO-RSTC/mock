@@ -73,7 +73,21 @@ function getBreadcrumbs(pathname: string) {
   return [];
 }
 
+const getPageTitle = (pathname: string) => {
+  const cleanPath = pathname.replace(/\/$/, "");
+  if (cleanPath.startsWith('/mypage/closing/')) return '締め作業詳細';
+  if (cleanPath === '/mypage/closing') return '締め作業一覧';
+  if (cleanPath === '/mypage/settings') return '基本情報';
+  if (cleanPath === '/mypage/skills') return 'スキル情報';
+  if (cleanPath === '/mypage/search-by-skill') return 'スキルから探す';
+  if (cleanPath === '/mypage/search-by-client') return 'クライアントから探す';
+  if (cleanPath === '/mypage') return 'マイページTOP';
+  return '';
+};
+
 const Header = ({ isSidebarOpen, toggleSidebar }: { isSidebarOpen: boolean; toggleSidebar: () => void; }) => {
+  const pathname = usePathname();
+  const pageTitle = getPageTitle(pathname);
   return (
     <header className="h-16 px-6 flex justify-between items-center z-20 relative">
       <button
@@ -84,7 +98,7 @@ const Header = ({ isSidebarOpen, toggleSidebar }: { isSidebarOpen: boolean; togg
         <Icon path={mdiMenu} size={1.2} />
       </button>
       <div className="text-right">
-        <span className="text-sm text-gray-600 font-medium">スキルから探す</span>
+        <span className="text-sm text-gray-600 font-medium">{pageTitle}</span>
       </div>
     </header>
   );

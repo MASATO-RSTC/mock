@@ -840,10 +840,13 @@ export default function StaffPage() {
                     </span>
                   ))}
                 </div>
+              ) : selectedMajor ? (
+                <span className="text-blue-600 font-medium">
+                  {selectedMajor.name}で検索
+                </span>
               ) : (
                 <span>職種を選択してください</span>
               )}
-
               <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
                 <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
               </div>
