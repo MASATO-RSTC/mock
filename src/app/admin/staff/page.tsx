@@ -613,7 +613,7 @@ const SkillSelectionModal = ({
 
   const handleSelectAll = () => {
     if (isGrouped) {
-      const allOptions = Object.values(options).flat();
+      const allOptions = Object.values(options).flat() as string[];
       setSelectedOptions(selectedOptions.length === allOptions.length ? [] : allOptions);
     } else {
       setSelectedOptions(selectedOptions.length === options.length ? [] : options);
