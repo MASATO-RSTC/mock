@@ -15,8 +15,21 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 import { jobCategories, JobCategory } from "@/data/jobCategories";
+import { itLanguages, itFrameworks, itOS, itDB, itMiddleware, itCloudServices } from "@/data/itSkillOptions";
+import { kidenCadToolsLanguages, kidenIndustries } from "@/data/kidenSkillOptions";
+import { kenchikuTools, kenchikuExperience } from "@/data/kenchikuSkillOptions";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
+
+// 雇用形態のオプション
+const employmentTypes = [
+  "派遣社員（製造）",
+  "派遣社員（販売/事務）",
+  "派遣社員（技能）",
+  "派遣社員（技術/プロ契）",
+  "派遣社員（技術/時給）",
+  "派遣社員（技術/月給）"
+];
 
 const TruncatedText = ({ text, maxLength = 40 }: { text: string, maxLength?: number }) => {
   const [showTooltip, setShowTooltip] = useState(false);
@@ -226,6 +239,7 @@ const staffList = [
     staff_number: "1538",
     staff_name: "奈良崎 慎一",
     staff_kana: "ナラサキ シンイチ",
+    employment_type: "派遣社員（技術/時給）",
     contract_type: "時給",
     unit_price: 4300,
     sales_person: "川村 駿介",
@@ -245,6 +259,7 @@ const staffList = [
     staff_number: "1627",
     staff_name: "片瀬 博也",
     staff_kana: "カタセ ヒロヤ",
+    employment_type: "派遣社員（技術/時給）",
     contract_type: "時給",
     unit_price: 5200,
     sales_person: "岩崎 泰成",
@@ -264,6 +279,7 @@ const staffList = [
     staff_number: "1994",
     staff_name: "石田 貴大",
     staff_kana: "イシダ タカヒロ",
+    employment_type: "派遣社員（技術/月給）",
     contract_type: "時給",
     unit_price: 8000,
     sales_person: "藤田 悠真",
@@ -283,6 +299,7 @@ const staffList = [
     staff_number: "2001",
     staff_name: "佐藤 花子",
     staff_kana: "サトウ ハナコ",
+    employment_type: "派遣社員（技術/月給）",
     contract_type: "月給",
     unit_price: 700000,
     sales_person: "久髙 陽子",
@@ -302,6 +319,7 @@ const staffList = [
     staff_number: "2002",
     staff_name: "鈴木 一郎",
     staff_kana: "スズキ イチロウ",
+    employment_type: "派遣社員（製造）",
     contract_type: "時給",
     unit_price: 3000,
     sales_person: "久高 将真",
@@ -321,6 +339,7 @@ const staffList = [
     staff_number: "2003",
     staff_name: "高橋 次郎",
     staff_kana: "タカハシ ジロウ",
+    employment_type: "派遣社員（技術/プロ契）",
     contract_type: "月給",
     unit_price: 900000,
     sales_person: "鈴木 祥",
@@ -340,6 +359,7 @@ const staffList = [
     staff_number: "2004",
     staff_name: "田中 三郎",
     staff_kana: "タナカ サブロウ",
+    employment_type: "派遣社員（販売/事務）",
     contract_type: "時給",
     unit_price: 6700,
     sales_person: "川村 駿介",
@@ -359,6 +379,7 @@ const staffList = [
     staff_number: "2005",
     staff_name: "山本 四郎",
     staff_kana: "ヤマモト シロウ",
+    employment_type: "派遣社員（技能）",
     contract_type: "-",
     unit_price: 0,
     sales_person: "岩崎 泰成",
@@ -378,6 +399,7 @@ const staffList = [
     staff_number: "2006",
     staff_name: "中村 五郎",
     staff_kana: "ナカムラ ゴロウ",
+    employment_type: "派遣社員（技術/時給）",
     contract_type: "時給",
     unit_price: 3900,
     sales_person: "藤田 悠真",
@@ -397,6 +419,7 @@ const staffList = [
     staff_number: "2007",
     staff_name: "小林 六郎",
     staff_kana: "コバヤシ ロクロウ",
+    employment_type: "派遣社員（技術/月給）",
     contract_type: "月給",
     unit_price: 800000,
     sales_person: "久髙 陽子",
@@ -559,6 +582,327 @@ const getStatusColor = (status: string) => {
   }
 };
 
+const SkillSelectionModal = ({
+  isOpen,
+  onClose,
+  title,
+  options,
+  selectedOptions,
+  setSelectedOptions,
+  isGrouped = false,
+  otherText,
+  setOtherText,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  options: any;
+  selectedOptions: string[];
+  setSelectedOptions: (options: string[]) => void;
+  isGrouped?: boolean;
+  otherText?: string;
+  setOtherText?: (text: string) => void;
+}) => {
+  const handleToggleSelection = (item: string) => {
+    setSelectedOptions(
+      selectedOptions.includes(item)
+        ? selectedOptions.filter(option => option !== item)
+        : [...selectedOptions, item]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (isGrouped) {
+      const allOptions = Object.values(options).flat();
+      setSelectedOptions(selectedOptions.length === allOptions.length ? [] : allOptions);
+    } else {
+      setSelectedOptions(selectedOptions.length === options.length ? [] : options);
+    }
+  };
+
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
+  const renderOptions = () => {
+    if (isGrouped) {
+      return Object.entries(options).map(([groupName, groupOptions]) => (
+        <div key={groupName} className="mb-4">
+          <h4 className="font-semibold text-gray-700 mb-2">{groupName}</h4>
+          <div className="grid grid-cols-2 gap-2">
+            {(groupOptions as string[]).map((option: string) => (
+              <label key={option} className="flex items-center space-x-2 text-sm" onClick={handleCheckboxClick}>
+                <input
+                  type="checkbox"
+                  checked={selectedOptions.includes(option)}
+                  onChange={() => handleToggleSelection(option)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  onClick={handleCheckboxClick}
+                />
+                <span>{option}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      ));
+    } else {
+      return (
+        <div className="grid grid-cols-2 gap-2">
+          {options.map((option: string) => (
+            <label key={option} className="flex items-center space-x-2 text-sm" onClick={handleCheckboxClick}>
+              <input
+                type="checkbox"
+                checked={selectedOptions.includes(option)}
+                onChange={() => handleToggleSelection(option)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                onClick={handleCheckboxClick}
+              />
+              <span>{option}</span>
+            </label>
+          ))}
+        </div>
+      );
+    }
+  };
+
+  return (
+    <Transition show={isOpen} as={Fragment}>
+      <Dialog onClose={onClose} className="relative z-50" static>
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-black/30" onClick={(e) => e.stopPropagation()} />
+        </Transition.Child>
+
+        <div className="fixed inset-0 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="flex min-h-full items-center justify-center p-4">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <Dialog.Panel 
+                className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Dialog.Title as="h3" className="text-lg font-bold leading-6 text-gray-900 mb-4">
+                  {title}
+                </Dialog.Title>
+                
+                <div className="max-h-96 overflow-y-auto">
+                  {renderOptions()}
+                </div>
+
+                {setOtherText && (
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">その他</label>
+                    <input
+                      type="text"
+                      value={otherText || ''}
+                      onChange={(e) => setOtherText(e.target.value)}
+                      className="w-full border rounded-md px-3 py-2 text-sm"
+                      placeholder="その他の項目を入力"
+                    />
+                  </div>
+                )}
+
+                <div className="mt-6 flex justify-between">
+                  <button
+                    type="button"
+                    onClick={handleSelectAll}
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    {isGrouped 
+                      ? selectedOptions.length === Object.values(options).flat().length ? '全解除' : '全選択'
+                      : selectedOptions.length === options.length ? '全解除' : '全選択'
+                    }
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="bg-blue-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-700"
+                  >
+                    確定
+                  </button>
+                </div>
+              </Dialog.Panel>
+            </Transition.Child>
+          </div>
+        </div>
+      </Dialog>
+    </Transition>
+  );
+};
+
+const DynamicSearchForm = ({ 
+  selectedMajorId,
+  modalState,
+  setModalState,
+  selections,
+  setSelections,
+  otherTexts,
+  setOtherTexts
+}: { 
+  selectedMajorId: string | null;
+  modalState: any;
+  setModalState: any;
+  selections: any;
+  setSelections: any;
+  otherTexts: any;
+  setOtherTexts: any;
+}) => {
+  const openModal = (type: keyof typeof modalState) => {
+    setModalState(prev => ({ ...prev, [type]: true }));
+  };
+  
+  const closeModal = (type: keyof typeof modalState) => {
+    setModalState(prev => ({ ...prev, [type]: false }));
+  };
+
+  const handleButtonClick = (e: React.MouseEvent, type: keyof typeof modalState) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openModal(type);
+  };
+
+  const setSelectionFor = (type: keyof typeof selections) => (options: string[]) => {
+    setSelections(prev => ({ ...prev, [type]: options }));
+  };
+
+  const setOtherTextFor = (type: keyof typeof otherTexts) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOtherTexts(prev => ({ ...prev, [type]: e.target.value }));
+  };
+
+  const renderSelectedItems = (items: string[], otherText: string) => {
+    const allItems = otherText ? [...items, `その他: ${otherText}`] : items;
+    const tooltipText = allItems.join(', ');
+    let displayText;
+
+    if (allItems.length === 0) {
+      displayText = <span className="text-gray-500">指定なし</span>;
+    } else if (allItems.length > 4) {
+      displayText = `${allItems.slice(0, 4).join(', ')} 他${allItems.length - 4}件`;
+    } else {
+      displayText = tooltipText;
+    }
+    
+    return { displayText, tooltipText, hasOverflow: allItems.length > 4 };
+  };
+
+  const renderITForm = () => {
+    const itItems = [
+      { type: 'language', label: '言語', options: itLanguages, selectionKey: 'languages', isGrouped: false },
+      { type: 'framework', label: 'フレームワーク', options: itFrameworks, selectionKey: 'frameworks', isGrouped: true },
+      { type: 'os', label: 'OS', options: itOS, selectionKey: 'os', isGrouped: false },
+      { type: 'db', label: 'DB', options: itDB, selectionKey: 'db', isGrouped: false },
+      { type: 'middleware', label: 'ミドルウェア', options: itMiddleware, selectionKey: 'middleware', isGrouped: true },
+      { type: 'cloud', label: 'クラウドサービス', options: itCloudServices, selectionKey: 'cloudServices', isGrouped: false },
+    ];
+    return (
+      <div>
+        {renderForm(itItems)}
+        <div className="border-b border-gray-200 pb-4 mb-4"></div>
+      </div>
+    );
+  }
+
+  const renderKidenForm = () => {
+    const kidenItems = [
+      { type: 'kidenTool', label: 'CAD・ツール・言語', options: kidenCadToolsLanguages, selectionKey: 'kidenTools', isGrouped: true },
+      { type: 'kidenIndustry', label: '業界', options: kidenIndustries, selectionKey: 'kidenIndustries', isGrouped: false },
+    ];
+    return (
+      <div>
+        {renderForm(kidenItems)}
+        <div className="border-b border-gray-200 pb-4 mb-4"></div>
+      </div>
+    );
+  }
+
+  const renderKenchikuForm = () => {
+    const kenchikuItems = [
+      { type: 'kenchikuTool', label: 'ツール', options: kenchikuTools, selectionKey: 'kenchikuTools', isGrouped: false },
+      { type: 'kenchikuExperience', label: '経験業務', options: kenchikuExperience, selectionKey: 'kenchikuExperiences', isGrouped: true },
+    ];
+    return (
+      <div>
+        {renderForm(kenchikuItems)}
+        <div className="border-b border-gray-200 pb-4 mb-4"></div>
+      </div>
+    );
+  }
+  
+  const renderOtherForm = () => (
+    <div>
+      <label className="block text-sm text-gray-600 mb-1">ツール</label>
+      <input
+        type="text"
+        placeholder="Excel、マクロ、PowerPoint、Word、その他ツール"
+        value={otherTexts.otherFreeText}
+        onChange={setOtherTextFor('otherFreeText')}
+        className="w-full border rounded-md px-3 py-2 text-sm"
+      />
+      <div className="border-b border-gray-200 pb-4 mb-4"></div>
+    </div>
+  )
+
+  const renderForm = (items: any[]) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4" onClick={(e) => e.stopPropagation()}>
+      {items.map(item => {
+        const currentSelections = selections[item.selectionKey as keyof typeof selections] || [];
+        const currentOtherText = otherTexts[item.selectionKey as keyof typeof otherTexts] || '';
+        const { displayText, tooltipText, hasOverflow } = renderSelectedItems(currentSelections, currentOtherText);
+        
+        return (
+          <div key={item.type} onClick={(e) => e.stopPropagation()}>
+            <label className="block text-sm text-gray-600 mb-1">{item.label}</label>
+            <button
+              onClick={(e) => handleButtonClick(e, item.type as keyof typeof modalState)}
+              className="w-full border rounded-md px-3 py-2 text-sm text-left bg-white truncate relative group"
+            >
+              {displayText}
+            </button>
+            <SkillSelectionModal
+              isOpen={modalState[item.type as keyof typeof modalState]}
+              onClose={() => closeModal(item.type as keyof typeof modalState)}
+              title={`${item.label}を選択`}
+              options={item.options}
+              selectedOptions={currentSelections}
+              setSelectedOptions={setSelectionFor(item.selectionKey as keyof typeof selections)}
+              isGrouped={item.isGrouped}
+              otherText={currentOtherText}
+              setOtherText={(text) => setOtherTexts(prev => ({...prev, [item.selectionKey]: text}))}
+            />
+          </div>
+        )
+      })}
+    </div>
+  );
+
+  switch (selectedMajorId) {
+    case 'it':
+      return renderITForm();
+    case 'kiden':
+      return renderKidenForm();
+    case 'kenchiku':
+      return renderKenchikuForm();
+    case 'other':
+      return renderOtherForm();
+    default:
+      return null;
+  }
+};
+
 export default function StaffPage() {
   const [selected, setSelected] = useState<number[]>([]);
   const [drawerStaff, setDrawerStaff] = useState<any>(null);
@@ -566,9 +910,9 @@ export default function StaffPage() {
   const [perPage, setPerPage] = useState(20);
   // メール送信ダイアログ用
   const [isMailDialogOpen, setIsMailDialogOpen] = useState(false);
-  const [mailType, setMailType] = useState<'remind' | 'update'>('remind');
-  const [subject, setSubject] = useState('【リツアンSTC】キャリアシート登録・更新のお願い');
-  const [body, setBody] = useState('お世話になっております。\nマイページにて「学歴」「最寄駅」「メインスキル」「職務経歴」（必要に応じて「資格」「語学力」も）をご登録・ご更新ください。\nご不明点があればご連絡ください。');
+  const [mailType, setMailType] = useState<'registration' | 'update'>('registration');
+  const [subject, setSubject] = useState('【本登録のお願い】キャリア情報のご登録について（マイページよりご入力ください）');
+  const [body, setBody] = useState('{ユーザー氏名}さん\n\nお仕事おつかれさまです、内勤の{ログインユーザー}でございます。\n\nキャリア情報のご登録・更新は、マイページ上からいつでも行っていただけます。\nつきましては、今後のご提案や営業活動の参考とさせていただくため、下記の項目についてご入力をお願いいたします。\n\n■ 必須項目\n・学歴\n・最寄駅\n・メインスキル（職種を選択後、得意とするスキルをご入力ください）\n・職務経歴\n\n■ 任意項目（お持ちの場合はぜひご記入ください）\n・資格\n・語学力\n\nみなさまにご入力いただいたキャリア情報は、\n法人営業の際に、企業に対して「エンジニアの強み」としてご紹介する材料になります。\nまた、会社全体のスキルや実績を整理・可視化することで、案件獲得力の強化やご希望に沿った案件の提案にもつながります。\n\nつまり、みなさま一人ひとりの登録が、企業としての競争力にもなり、結果的にご自身のチャンスも広がります。\nお忙しいところ恐縮ですが、ぜひご協力いただけますと幸いです。\n\n▶ ご入力はこちらから\nhttps://app.ritsuan.com/user/skill');
   // 検索フォーム用 state 追加
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [statusTarget, setStatusTarget] = useState<'all'|'employee'|'applicant'>('all');
@@ -577,6 +921,99 @@ export default function StaffPage() {
   const [selectedMajor, setSelectedMajor] = useState<JobCategory | null>(null);
   const [selectedMediums, setSelectedMediums] = useState<JobCategory[]>([]);
   const [statusModalStep, setStatusModalStep] = useState<'target' | 'status'>('target');
+  const [selectedEmploymentType, setSelectedEmploymentType] = useState<string>('');
+  const [skillKeyword, setSkillKeyword] = useState<string>('');
+  
+  // タブ機能用のstate
+  const [activeTab, setActiveTab] = useState<'main' | 'career'>('main');
+  
+  // 経歴書から選ぶ機能用のstate
+  const [isCareerHistoryModalOpen, setIsCareerHistoryModalOpen] = useState(false);
+  const [selectedCareerMajor, setSelectedCareerMajor] = useState<JobCategory | null>(null);
+  const [selectedCareerMediums, setSelectedCareerMediums] = useState<JobCategory[]>([]);
+  
+  // DynamicSearchForm用のstate
+  const [skillModalState, setSkillModalState] = useState({
+    language: false,
+    framework: false,
+    os: false,
+    db: false,
+    middleware: false,
+    cloud: false,
+    kidenTool: false,
+    kidenIndustry: false,
+    kenchikuTool: false,
+    kenchikuExperience: false,
+  });
+
+  const [skillSelections, setSkillSelections] = useState({
+    languages: [],
+    frameworks: [],
+    os: [],
+    db: [],
+    middleware: [],
+    cloudServices: [],
+    kidenTools: [],
+    kidenIndustries: [],
+    kenchikuTools: [],
+    kenchikuExperiences: [],
+  });
+
+  const [skillOtherTexts, setSkillOtherTexts] = useState({
+    languages: '',
+    frameworks: '',
+    os: '',
+    db: '',
+    middleware: '',
+    cloudServices: '',
+    kidenTools: '',
+    kidenIndustries: '',
+    kenchikuTools: '',
+    kenchikuExperiences: '',
+    otherFreeText: '',
+  });
+
+  // 経歴書から選ぶ機能用のDynamicSearchForm用のstate
+  const [careerSkillModalState, setCareerSkillModalState] = useState({
+    language: false,
+    framework: false,
+    os: false,
+    db: false,
+    middleware: false,
+    cloud: false,
+    kidenTool: false,
+    kidenIndustry: false,
+    kenchikuTool: false,
+    kenchikuExperience: false,
+  });
+
+  const [careerSkillSelections, setCareerSkillSelections] = useState({
+    languages: [],
+    frameworks: [],
+    os: [],
+    db: [],
+    middleware: [],
+    cloudServices: [],
+    kidenTools: [],
+    kidenIndustries: [],
+    kenchikuTools: [],
+    kenchikuExperiences: [],
+  });
+
+  const [careerSkillOtherTexts, setCareerSkillOtherTexts] = useState({
+    languages: '',
+    frameworks: '',
+    os: '',
+    db: '',
+    middleware: '',
+    cloudServices: '',
+    kidenTools: '',
+    kidenIndustries: '',
+    kenchikuTools: '',
+    kenchikuExperiences: '',
+    otherFreeText: '',
+  });
+
   const baseStatusOptions = [
     '稼働中',
     '稼働中（異動）',
@@ -625,14 +1062,14 @@ export default function StaffPage() {
   };
 
   // ラジオ切替時に件名・本文を自動変更
-  const handleMailTypeChange = (type: 'remind' | 'update') => {
+  const handleMailTypeChange = (type: 'registration' | 'update') => {
     setMailType(type);
-    if (type === 'remind') {
-      setSubject('【リツアンSTC】キャリアシート登録・更新のお願い');
-      setBody('お世話になっております。\nマイページにて「学歴」「最寄駅」「メインスキル」「職務経歴」（必要に応じて「資格」「語学力」も）をご登録・ご更新ください。\nご不明点があればご連絡ください。');
+    if (type === 'registration') {
+      setSubject('【本登録のお願い】キャリア情報のご登録について（マイページよりご入力ください）');
+      setBody('{ユーザー氏名}さん\n\nお仕事おつかれさまです、内勤の{ログインユーザー}でございます。\n\nキャリア情報のご登録・更新は、マイページ上からいつでも行っていただけます。\nつきましては、今後のご提案や営業活動の参考とさせていただくため、下記の項目についてご入力をお願いいたします。\n\n■ 必須項目\n・学歴\n・最寄駅\n・メインスキル（職種を選択後、得意とするスキルをご入力ください）\n・職務経歴\n\n■ 任意項目（お持ちの場合はぜひご記入ください）\n・資格\n・語学力\n\nみなさまにご入力いただいたキャリア情報は、\n法人営業の際に、企業に対して「エンジニアの強み」としてご紹介する材料になります。\nまた、会社全体のスキルや実績を整理・可視化することで、案件獲得力の強化やご希望に沿った案件の提案にもつながります。\n\nつまり、みなさま一人ひとりの登録が、企業としての競争力にもなり、結果的にご自身のチャンスも広がります。\nお忙しいところ恐縮ですが、ぜひご協力いただけますと幸いです。\n\n▶ ご入力はこちらから\nhttps://app.ritsuan.com/user/skill');
     } else {
-      setSubject('【リツアンSTC】職務経歴書の追加・更新のお願い');
-      setBody('お世話になっております。\n現場異動等に伴い、職務経歴書の追加・更新（必要に応じてその他項目も）をお願いいたします。\nご対応のほどよろしくお願いいたします。');
+      setSubject('【キャリアシート情報更新のお願い】異動に伴い職務経歴の追加をご確認ください');
+      setBody('{ユーザー氏名}さん\n\nお仕事おつかれさまです、内勤の{ログインユーザー}でございます。\n※ログインユーザーは苗字のみ\n\nこのたびのご異動に伴い、マイページ上のキャリアシートについて、\n職務経歴の追加・修正をお願いできればと思っております。\n\n現場変更のタイミングは、スキルやご経験の最新状況を整理し、\n次のご提案にすぐ活かせる重要な機会でもあります。\n\n職務経歴に加えて、必要に応じて以下の項目も更新いただけますと幸いです。\n\n■ 更新をご確認いただきたい項目\n・職務経歴（キャリアシート）\n・最寄駅、メインスキル、資格など変更がある場合\n\nお手数をおかけいたしますが、ご協力のほどよろしくお願いいたします。\n\n▶ ご入力・更新はこちらから\nhttps://app.ritsuan.com/user/skill');
     }
   };
 
@@ -674,6 +1111,21 @@ export default function StaffPage() {
     }
   };
 
+  // 経歴書から選ぶ機能の職種選択ハンドラー
+  const handleCareerSelectAllMediums = () => {
+    if (!selectedCareerMajor || !selectedCareerMajor.children) return;
+
+    const areAllSelected =
+      selectedCareerMajor.children.length > 0 &&
+      selectedCareerMediums.length === selectedCareerMajor.children.length;
+
+    if (areAllSelected) {
+      setSelectedCareerMediums([]);
+    } else {
+      setSelectedCareerMediums(selectedCareerMajor.children);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* タイトル＋アイコン */}
@@ -706,16 +1158,29 @@ export default function StaffPage() {
               <input className="border rounded px-3 py-2 text-sm" placeholder="スタッフ氏名" />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-base font-bold text-gray-700 whitespace-nowrap">契約形態</label>
+              <label className="text-base font-bold text-gray-700 whitespace-nowrap">雇用形態</label>
+              <select 
+                className="border rounded px-3 py-2 text-sm"
+                value={selectedEmploymentType}
+                onChange={(e) => setSelectedEmploymentType(e.target.value)}
+              >
+                <option value="">指定なし</option>
+                {employmentTypes.map((type) => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {/* 2段目: 2項目 */}
+          <div className="flex flex-wrap gap-4 mt-4">
+            <div className="flex flex-col gap-1 max-w-xs w-60">
+              <label className="text-base font-bold text-gray-700 whitespace-nowrap truncate">契約形態</label>
               <select className="border rounded px-3 py-2 text-sm">
                 <option>指定なし</option>
                 <option>時給</option>
                 <option>月給</option>
               </select>
             </div>
-          </div>
-          {/* 2段目: 2項目 */}
-          <div className="flex flex-wrap gap-4 mt-4">
             <div className="flex flex-col gap-1 max-w-xs w-60">
               <label className="text-base font-bold text-gray-700 whitespace-nowrap truncate">キャリアシート更新状況</label>
               <select className="border rounded px-3 py-2 text-sm">
@@ -764,34 +1229,105 @@ export default function StaffPage() {
               </div>
             </button>
           </div>
-          {/* 職種選択 */}
+          {/* 職種選択（タブ形式） */}
           <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">職種</label>
+            <div className="flex border-b border-gray-200 mb-4">
+              <button
+                type="button"
+                onClick={() => setActiveTab('main')}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'main'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                メインスキルから選ぶ
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('career')}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'career'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                経歴書から選ぶ
+              </button>
+            </div>
+            
+            <label className="block text-sm font-medium text-gray-700 mb-2">メインスキル（職種）</label>
             <button
               type="button"
-              onClick={() => setIsJobModalOpen(true)}
+              onClick={() => activeTab === 'main' ? setIsJobModalOpen(true) : setIsCareerHistoryModalOpen(true)}
               className="relative w-full flex items-center border rounded-md p-2.5 text-left text-gray-900 bg-gray-50/50 hover:bg-gray-100 transition"
             >
-              {selectedMediums.length > 0 ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-bold bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">{selectedMajor?.name}</span>
-                  {selectedMediums.map(m => (
-                    <span key={m.id} className="bg-gray-200 text-gray-800 text-xs font-medium px-2 py-1 rounded-full">
-                      {m.name}
-                    </span>
-                  ))}
-                </div>
-              ) : selectedMajor ? (
-                <span className="text-blue-600 font-medium">
-                  {selectedMajor.name}で検索
-                </span>
+              {activeTab === 'main' ? (
+                // メインスキルから選ぶの場合
+                selectedMediums.length > 0 ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-bold bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">{selectedMajor?.name}</span>
+                    {selectedMediums.map(m => (
+                      <span key={m.id} className="bg-gray-200 text-gray-800 text-xs font-medium px-2 py-1 rounded-full">
+                        {m.name}
+                      </span>
+                    ))}
+                  </div>
+                ) : selectedMajor ? (
+                  <span className="text-blue-600 font-medium">
+                    {selectedMajor.name}で検索
+                  </span>
+                ) : (
+                  <span className="text-gray-500">職種を選択してください</span>
+                )
               ) : (
-                <span>職種を選択してください</span>
+                // 経歴書から選ぶの場合
+                selectedCareerMediums.length > 0 ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-bold bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">{selectedCareerMajor?.name}</span>
+                    {selectedCareerMediums.map(m => (
+                      <span key={m.id} className="bg-gray-200 text-gray-800 text-xs font-medium px-2 py-1 rounded-full">
+                        {m.name}
+                      </span>
+                    ))}
+                  </div>
+                ) : selectedCareerMajor ? (
+                  <span className="text-blue-600 font-medium">
+                    {selectedCareerMajor.name}で検索
+                  </span>
+                ) : (
+                  <span className="text-gray-500">職種を選択してください</span>
+                )
               )}
               <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
                 <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
               </div>
             </button>
+          </div>
+          
+          <div className="mt-6">
+            <DynamicSearchForm 
+              key={`${activeTab}-${activeTab === 'main' ? selectedMajor?.id || 'none' : selectedCareerMajor?.id || 'none'}`} 
+              selectedMajorId={activeTab === 'main' ? selectedMajor?.id || null : selectedCareerMajor?.id || null} 
+              modalState={activeTab === 'main' ? skillModalState : careerSkillModalState} 
+              setModalState={activeTab === 'main' ? setSkillModalState : setCareerSkillModalState} 
+              selections={activeTab === 'main' ? skillSelections : careerSkillSelections} 
+              setSelections={activeTab === 'main' ? setSkillSelections : setCareerSkillSelections} 
+              otherTexts={activeTab === 'main' ? skillOtherTexts : careerSkillOtherTexts} 
+              setOtherTexts={activeTab === 'main' ? setSkillOtherTexts : setCareerSkillOtherTexts} 
+            />
+          </div>
+
+          {/* マイページのスキルから探す */}
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">フリーワード検索</label>
+            <input
+              type="text"
+              className="w-full border rounded-md px-3 py-2 text-sm text-gray-900 bg-white hover:bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              placeholder="キャリアシートの担当業務の内容から検索"
+              value={skillKeyword}
+              onChange={(e) => setSkillKeyword(e.target.value)}
+            />
           </div>
           <div className="flex justify-end mt-4">
             <button type="submit" className="bg-blue-600 text-white rounded px-6 py-2 text-sm font-semibold shadow hover:bg-blue-700 transition">検索</button>
@@ -812,7 +1348,13 @@ export default function StaffPage() {
               </select>
               <button
                 className="bg-blue-500 hover:bg-blue-600 text-white font-bold rounded px-4 py-2 text-xs shadow"
-                onClick={() => {}}
+                onClick={() => {
+                  if (selected.length === 0) {
+                    alert('送信対象のスタッフを選択してください。');
+                    return;
+                  }
+                  setIsMailDialogOpen(true);
+                }}
               >
                 実行
               </button>
@@ -859,6 +1401,7 @@ export default function StaffPage() {
               <th className="px-2 py-4 text-left text-sm font-bold text-gray-700 whitespace-nowrap w-32">ステータス</th>
               <th className="px-2 py-4 text-left text-sm font-bold text-gray-700 whitespace-nowrap">スタッフ</th>
               <th className="px-2 py-4 text-left text-sm font-bold text-gray-700 whitespace-nowrap w-32">クライアント</th>
+              <th className="px-2 py-4 text-left text-sm font-bold text-gray-700 whitespace-nowrap w-32">雇用形態</th>
               <th className="px-2 py-4 text-left text-sm font-bold text-gray-700 whitespace-nowrap w-20">契約形態</th>
               <th className="px-2 py-4 text-left text-sm font-bold text-gray-700 whitespace-nowrap w-28">請求単価</th>
               <th className="px-2 py-4 text-left text-sm font-bold text-gray-700 whitespace-nowrap w-28">営業担当</th>
@@ -896,6 +1439,9 @@ export default function StaffPage() {
                   <td className="px-2 py-4 text-sm text-gray-900 whitespace-nowrap w-32">
                     <div className="text-xs text-gray-500 mb-1">{staff.client_number}</div>
                     <div className="font-bold">{staff.client_name}</div>
+                  </td>
+                  <td className="px-2 py-4 text-sm text-gray-900 whitespace-nowrap w-32">
+                    {staff.employment_type}
                   </td>
                   <td className="px-2 py-4 text-sm text-gray-900 whitespace-nowrap w-20">{staff.contract_type}</td>
                   <td className="px-2 py-4 text-sm text-gray-900 whitespace-nowrap w-28">
@@ -1138,7 +1684,7 @@ export default function StaffPage() {
 
       {/* ステータス選択モーダル */}
       <Transition appear show={isStatusModalOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-50" onClose={() => setIsStatusModalOpen(false)}>
+        <Dialog as="div" className="relative z-50" onClose={() => setIsStatusModalOpen(false)} static>
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"
@@ -1148,10 +1694,10 @@ export default function StaffPage() {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-black/30" />
+            <div className="fixed inset-0 bg-black/30" onClick={(e) => e.stopPropagation()} />
           </Transition.Child>
 
-          <div className="fixed inset-0 overflow-y-auto">
+          <div className="fixed inset-0 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex min-h-full items-center justify-center p-4 text-center">
               <Transition.Child
                 as={Fragment}
@@ -1162,7 +1708,10 @@ export default function StaffPage() {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel 
+                  className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Dialog.Title as="h3" className="text-lg font-bold leading-6 text-gray-900 flex justify-between items-center">
                     ステータスを選択
                     <button onClick={() => setIsStatusModalOpen(false)} className="text-gray-400 hover:text-gray-600">
@@ -1177,7 +1726,7 @@ export default function StaffPage() {
                       </div>
                       <ul>
                         <li>
-                          <label className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 cursor-pointer transition-colors ${statusTarget === 'all' ? 'bg-blue-50' : 'hover:bg-gray-100'}`}>
+                          <label className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 cursor-pointer transition-colors ${statusTarget === 'all' ? 'bg-blue-50' : 'hover:bg-gray-100'}`} onClick={(e) => e.stopPropagation()}>
                             <input
                               type="radio"
                               name="statusTarget"
@@ -1188,12 +1737,13 @@ export default function StaffPage() {
                                 setSelectedStatuses([]);
                               }}
                               className="form-radio h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                              onClick={(e) => e.stopPropagation()}
                             />
                             <span className={`${statusTarget === 'all' ? 'text-blue-700 font-bold' : 'text-gray-900'}`}>全員</span>
                           </label>
                         </li>
                         <li>
-                          <label className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 cursor-pointer transition-colors ${statusTarget === 'employee' ? 'bg-blue-50' : 'hover:bg-gray-100'}`}>
+                          <label className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 cursor-pointer transition-colors ${statusTarget === 'employee' ? 'bg-blue-50' : 'hover:bg-gray-100'}`} onClick={(e) => e.stopPropagation()}>
                             <input
                               type="radio"
                               name="statusTarget"
@@ -1204,12 +1754,13 @@ export default function StaffPage() {
                                 setSelectedStatuses([]);
                               }}
                               className="form-radio h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                              onClick={(e) => e.stopPropagation()}
                             />
                             <span className={`${statusTarget === 'employee' ? 'text-blue-700 font-bold' : 'text-gray-900'}`}>社員のみ</span>
                           </label>
                         </li>
                         <li>
-                          <label className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 cursor-pointer transition-colors ${statusTarget === 'applicant' ? 'bg-blue-50' : 'hover:bg-gray-100'}`}>
+                          <label className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 cursor-pointer transition-colors ${statusTarget === 'applicant' ? 'bg-blue-50' : 'hover:bg-gray-100'}`} onClick={(e) => e.stopPropagation()}>
                             <input
                               type="radio"
                               name="statusTarget"
@@ -1220,6 +1771,7 @@ export default function StaffPage() {
                                 setSelectedStatuses([]);
                               }}
                               className="form-radio h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                              onClick={(e) => e.stopPropagation()}
                             />
                             <span className={`${statusTarget === 'applicant' ? 'text-blue-700 font-bold' : 'text-gray-900'}`}>応募者のみ</span>
                           </label>
@@ -1240,6 +1792,7 @@ export default function StaffPage() {
                           }
                           onChange={handleSelectAllStatuses}
                           disabled={statusOptionsForTarget.length === 0}
+                          onClick={(e) => e.stopPropagation()}
                         />
                         <label
                           htmlFor="select-all-statuses"
@@ -1261,12 +1814,13 @@ export default function StaffPage() {
                                 <ul className="space-y-0.5">
                                   {baseStatusOptions.map(status => (
                                     <li key={status}>
-                                      <label className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-gray-100 cursor-pointer">
+                                      <label className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-gray-100 cursor-pointer" onClick={(e) => e.stopPropagation()}>
                                         <input
                                           type="checkbox"
                                           className="form-checkbox h-3 w-3 text-blue-600 rounded"
                                           checked={selectedStatuses.includes(status)}
                                           onChange={() => handleStatusToggle(status)}
+                                          onClick={(e) => e.stopPropagation()}
                                         />
                                         <span className="text-xs">{status}</span>
                                       </label>
@@ -1283,12 +1837,13 @@ export default function StaffPage() {
                                 <ul className="space-y-0.5">
                                   {applicantStatusOptions.map(status => (
                                     <li key={status}>
-                                      <label className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-gray-100 cursor-pointer">
+                                      <label className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-gray-100 cursor-pointer" onClick={(e) => e.stopPropagation()}>
                                         <input
                                           type="checkbox"
                                           className="form-checkbox h-3 w-3 text-blue-600 rounded"
                                           checked={selectedStatuses.includes(status)}
                                           onChange={() => handleStatusToggle(status)}
+                                          onClick={(e) => e.stopPropagation()}
                                         />
                                         <span className="text-xs">{status}</span>
                                       </label>
@@ -1307,12 +1862,13 @@ export default function StaffPage() {
                               <ul className="space-y-0.5">
                                 {baseStatusOptions.map(status => (
                                   <li key={status}>
-                                    <label className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-gray-100 cursor-pointer">
+                                    <label className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-gray-100 cursor-pointer" onClick={(e) => e.stopPropagation()}>
                                       <input
                                         type="checkbox"
                                         className="form-checkbox h-3 w-3 text-blue-600 rounded"
                                         checked={selectedStatuses.includes(status)}
                                         onChange={() => handleStatusToggle(status)}
+                                        onClick={(e) => e.stopPropagation()}
                                       />
                                       <span className="text-xs">{status}</span>
                                     </label>
@@ -1330,12 +1886,13 @@ export default function StaffPage() {
                               <ul className="space-y-0.5">
                                 {applicantStatusOptions.map(status => (
                                   <li key={status}>
-                                    <label className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-gray-100 cursor-pointer">
+                                    <label className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-gray-100 cursor-pointer" onClick={(e) => e.stopPropagation()}>
                                       <input
                                         type="checkbox"
                                         className="form-checkbox h-3 w-3 text-blue-600 rounded"
                                         checked={selectedStatuses.includes(status)}
                                         onChange={() => handleStatusToggle(status)}
+                                        onClick={(e) => e.stopPropagation()}
                                       />
                                       <span className="text-xs">{status}</span>
                                     </label>
@@ -1406,7 +1963,7 @@ export default function StaffPage() {
 
       {/* 職種選択モーダル */}
       <Transition appear show={isJobModalOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-50" onClose={() => setIsJobModalOpen(false)}>
+        <Dialog as="div" className="relative z-50" onClose={() => setIsJobModalOpen(false)} static>
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"
@@ -1416,10 +1973,10 @@ export default function StaffPage() {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-black/30" />
+            <div className="fixed inset-0 bg-black/30" onClick={(e) => e.stopPropagation()} />
           </Transition.Child>
 
-          <div className="fixed inset-0 overflow-y-auto">
+          <div className="fixed inset-0 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex min-h-full items-center justify-center p-4 text-center">
               <Transition.Child
                 as={Fragment}
@@ -1430,7 +1987,10 @@ export default function StaffPage() {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel 
+                  className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Dialog.Title as="h3" className="text-lg font-bold leading-6 text-gray-900 flex justify-between items-center">
                     職種を選択
                     <button onClick={() => setIsJobModalOpen(false)} className="text-gray-400 hover:text-gray-600">
@@ -1446,7 +2006,7 @@ export default function StaffPage() {
                       <ul>
                         {jobCategories.map(major => (
                           <li key={major.id}>
-                            <label className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 cursor-pointer transition-colors ${selectedMajor?.id === major.id ? 'bg-blue-50' : 'hover:bg-gray-100'}`}>
+                            <label className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 cursor-pointer transition-colors ${selectedMajor?.id === major.id ? 'bg-blue-50' : 'hover:bg-gray-100'}`} onClick={(e) => e.stopPropagation()}>
                               <input
                                 type="radio"
                                 name="major-category"
@@ -1456,6 +2016,7 @@ export default function StaffPage() {
                                   setSelectedMajor(major);
                                   setSelectedMediums([]);
                                 }}
+                                onClick={(e) => e.stopPropagation()}
                               />
                               <span className={`${selectedMajor?.id === major.id ? 'text-blue-700 font-bold' : 'text-gray-900'}`}>{major.name}</span>
                             </label>
@@ -1478,6 +2039,7 @@ export default function StaffPage() {
                           }
                           onChange={handleSelectAllMediums}
                           disabled={!selectedMajor?.children || selectedMajor.children.length === 0}
+                          onClick={(e) => e.stopPropagation()}
                         />
                         <label
                           htmlFor="select-all-mediums"
@@ -1491,7 +2053,7 @@ export default function StaffPage() {
                         <ul className="h-full overflow-y-auto" style={{maxHeight: '350px'}}>
                           {selectedMajor.children.map(medium => (
                             <li key={medium.id}>
-                              <label className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer">
+                              <label className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer" onClick={(e) => e.stopPropagation()}>
                                 <input
                                   type="checkbox"
                                   className="form-checkbox h-4 w-4 text-blue-600 rounded"
@@ -1503,6 +2065,7 @@ export default function StaffPage() {
                                         : [...prev, medium]
                                     )
                                   }}
+                                  onClick={(e) => e.stopPropagation()}
                                 />
                                 <span className="text-sm">{medium.name}</span>
                               </label>
@@ -1560,6 +2123,340 @@ export default function StaffPage() {
                       onClick={() => setIsJobModalOpen(false)}
                     >
                       決定
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
+      {/* メール送信ダイアログ */}
+      <Transition appear show={isMailDialogOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={() => setIsMailDialogOpen(false)} static>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/30" onClick={(e) => e.stopPropagation()} />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel 
+                  className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Dialog.Title as="h3" className="text-lg font-bold leading-6 text-gray-900 flex justify-between items-center">
+                    メール送信
+                    <button onClick={() => setIsMailDialogOpen(false)} className="text-gray-400 hover:text-gray-600">
+                      <Icon path={mdiClose} size={1} />
+                    </button>
+                  </Dialog.Title>
+                  
+                  <div className="mt-4 space-y-4">
+                    {/* 送信対象 */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">送信対象</label>
+                      <div className="bg-gray-50 p-3 rounded-md">
+                        <p className="text-sm text-gray-600">
+                          選択されたスタッフ: <span className="font-semibold text-blue-600">{selected.length}名</span>
+                        </p>
+                        <div className="mt-2 max-h-32 overflow-y-auto">
+                          {staffList
+                            .filter(staff => selected.includes(staff.id))
+                            .map(staff => (
+                              <div key={staff.id} className="text-xs text-gray-500 py-1">
+                                {staff.staff_name} ({staff.staff_number})
+                              </div>
+                            ))
+                          }
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* メールタイプ選択 */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">メールタイプ</label>
+                      <div className="space-y-2">
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="mailType"
+                            value="registration"
+                            checked={mailType === 'registration'}
+                            onChange={() => handleMailTypeChange('registration')}
+                            className="mr-2"
+                          />
+                          <span className="text-sm">本登録のお願い</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="mailType"
+                            value="update"
+                            checked={mailType === 'update'}
+                            onChange={() => handleMailTypeChange('update')}
+                            className="mr-2"
+                          />
+                          <span className="text-sm">異動時の更新</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* 件名 */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">件名</label>
+                      <input
+                        type="text"
+                        value={subject}
+                        onChange={(e) => setSubject(e.target.value)}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                      />
+                    </div>
+
+                    {/* 本文 */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">本文</label>
+                      <textarea
+                        value={body}
+                        onChange={(e) => setBody(e.target.value)}
+                        rows={8}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex justify-end gap-4 border-t pt-4">
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                      onClick={() => setIsMailDialogOpen(false)}
+                    >
+                      キャンセル
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                      onClick={() => {
+                        // メール送信処理（実際の実装ではAPI呼び出し）
+                        alert(`${selected.length}名のスタッフにメールを送信しました。`);
+                        setIsMailDialogOpen(false);
+                        setSelected([]); // 選択をクリア
+                      }}
+                    >
+                      送信
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
+      {/* 経歴書から選ぶ */}
+      <div className="mt-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">経歴書から選ぶ</label>
+        <button
+          type="button"
+          onClick={() => setIsCareerHistoryModalOpen(true)}
+          className="relative w-full flex items-center border rounded-md p-2.5 text-left text-gray-900 bg-gray-50/50 hover:bg-gray-100 transition"
+        >
+          {selectedCareerMediums.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-bold bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">{selectedCareerMajor?.name}</span>
+              {selectedCareerMediums.map(m => (
+                <span key={m.id} className="bg-gray-200 text-gray-800 text-xs font-medium px-2 py-1 rounded-full">
+                  {m.name}
+                </span>
+              ))}
+            </div>
+          ) : selectedCareerMajor ? (
+            <span className="text-blue-600 font-medium">
+              {selectedCareerMajor.name}で検索
+            </span>
+          ) : (
+            <span className="text-gray-500">職種を選択してください</span>
+          )}
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+          </div>
+        </button>
+      </div>
+      
+      {selectedCareerMajor && (
+        <div className="mt-6">
+          <DynamicSearchForm 
+            key={`career-${selectedCareerMajor?.id || 'none'}`} 
+            selectedMajorId={selectedCareerMajor?.id || null} 
+            modalState={careerSkillModalState} 
+            setModalState={setCareerSkillModalState} 
+            selections={careerSkillSelections} 
+            setSelections={setCareerSkillSelections} 
+            otherTexts={careerSkillOtherTexts} 
+            setOtherTexts={setCareerSkillOtherTexts} 
+          />
+        </div>
+      )}
+
+      {/* 経歴書から選ぶ職種選択モーダル */}
+      <Transition appear show={isCareerHistoryModalOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={() => setIsCareerHistoryModalOpen(false)} static>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/30" onClick={(e) => e.stopPropagation()} />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel 
+                  className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Dialog.Title as="h3" className="text-lg font-bold leading-6 text-gray-900 flex justify-between items-center">
+                    経歴書から選ぶ - 職種を選択
+                    <button onClick={() => setIsCareerHistoryModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                      <Icon path={mdiClose} size={1} />
+                    </button>
+                  </Dialog.Title>
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4" style={{minHeight: '400px'}}>
+                    {/* 職種（大） */}
+                    <div className="border-r pr-4">
+                      <div className="flex items-center border-b pb-2 mb-2" style={{ minHeight: '42px' }}>
+                        <h4 className="text-sm font-semibold text-gray-500">職種（大）</h4>
+                      </div>
+                      <ul>
+                        {jobCategories.map(category => (
+                          <li key={category.id}>
+                            <button
+                              onClick={() => {
+                                setSelectedCareerMajor(category);
+                                setSelectedCareerMediums([]);
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                                selectedCareerMajor?.id === category.id
+                                  ? 'bg-blue-50 text-blue-700 font-medium'
+                                  : 'hover:bg-gray-100'
+                              }`}
+                            >
+                              {category.name}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    {/* 職種（中） */}
+                    <div className="border-r pr-4">
+                      <div className="flex items-center justify-between border-b pb-2 mb-2" style={{ minHeight: '42px' }}>
+                        <h4 className="text-sm font-semibold text-gray-500">職種（中）</h4>
+                        {selectedCareerMajor && selectedCareerMajor.children && selectedCareerMajor.children.length > 0 && (
+                          <button
+                            onClick={handleCareerSelectAllMediums}
+                            className="text-xs text-blue-600 hover:text-blue-800"
+                          >
+                            {selectedCareerMediums.length === selectedCareerMajor.children.length ? '全解除' : '全選択'}
+                          </button>
+                        )}
+                      </div>
+                      <ul>
+                        {selectedCareerMajor?.children?.map(medium => (
+                          <li key={medium.id}>
+                            <label className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 cursor-pointer transition-colors ${
+                              selectedCareerMediums.some(m => m.id === medium.id) ? 'bg-blue-50' : 'hover:bg-gray-100'
+                            }`} onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                checked={selectedCareerMediums.some(m => m.id === medium.id)}
+                                onChange={() => {
+                                  setSelectedCareerMediums(prev =>
+                                    prev.some(m => m.id === medium.id)
+                                      ? prev.filter(m => m.id !== medium.id)
+                                      : [...prev, medium]
+                                  );
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              {medium.name}
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    {/* 選択済み */}
+                    <div>
+                      <div className="flex items-center justify-between border-b pb-2 mb-2" style={{ minHeight: '42px' }}>
+                        <h4 className="text-sm font-semibold text-gray-500">選択済み</h4>
+                        {selectedCareerMediums.length > 0 && (
+                          <button
+                            onClick={() => setSelectedCareerMediums([])}
+                            className="text-xs text-red-600 hover:text-red-800"
+                          >
+                            クリア
+                          </button>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        {selectedCareerMediums.map(medium => (
+                          <div key={medium.id} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
+                            <span className="text-sm">{medium.name}</span>
+                            <button
+                              onClick={() => setSelectedCareerMediums(prev => prev.filter(m => m.id !== medium.id))}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-6 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsCareerHistoryModalOpen(false)}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                    >
+                      キャンセル
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsCareerHistoryModalOpen(false)}
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
+                    >
+                      確定
                     </button>
                   </div>
                 </Dialog.Panel>
