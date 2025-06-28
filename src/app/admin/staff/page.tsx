@@ -762,11 +762,11 @@ const DynamicSearchForm = ({
   setOtherTexts: any;
 }) => {
   const openModal = (type: keyof typeof modalState) => {
-    setModalState(prev => ({ ...prev, [type]: true }));
+    setModalState((prev: any) => ({ ...prev, [type]: true }));
   };
   
   const closeModal = (type: keyof typeof modalState) => {
-    setModalState(prev => ({ ...prev, [type]: false }));
+    setModalState((prev: any) => ({ ...prev, [type]: false }));
   };
 
   const handleButtonClick = (e: React.MouseEvent, type: keyof typeof modalState) => {
@@ -776,11 +776,11 @@ const DynamicSearchForm = ({
   };
 
   const setSelectionFor = (type: keyof typeof selections) => (options: string[]) => {
-    setSelections(prev => ({ ...prev, [type]: options }));
+    setSelections((prev: any) => ({ ...prev, [type]: options }));
   };
 
   const setOtherTextFor = (type: keyof typeof otherTexts) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setOtherTexts(prev => ({ ...prev, [type]: e.target.value }));
+    setOtherTexts((prev: any) => ({ ...prev, [type]: e.target.value }));
   };
 
   const renderSelectedItems = (items: string[], otherText: string) => {
@@ -881,7 +881,7 @@ const DynamicSearchForm = ({
               setSelectedOptions={setSelectionFor(item.selectionKey as keyof typeof selections)}
               isGrouped={item.isGrouped}
               otherText={currentOtherText}
-              setOtherText={(text) => setOtherTexts(prev => ({...prev, [item.selectionKey]: text}))}
+              setOtherText={(text) => setOtherTexts((prev: any) => ({...prev, [item.selectionKey]: text}))}
             />
           </div>
         )
