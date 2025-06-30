@@ -1232,8 +1232,8 @@ export default function StaffPage() {
           {/* 職種選択（タブ形式） */}
           <div className="mt-4">
             <div className="flex border-b border-gray-200 mb-4">
-              <button
-                type="button"
+            <button
+              type="button"
                 onClick={() => setActiveTab('main')}
                 className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === 'main'
@@ -1265,19 +1265,19 @@ export default function StaffPage() {
               {activeTab === 'main' ? (
                 // メインスキルから選ぶの場合
                 selectedMediums.length > 0 ? (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-bold bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">{selectedMajor?.name}</span>
-                    {selectedMediums.map(m => (
-                      <span key={m.id} className="bg-gray-200 text-gray-800 text-xs font-medium px-2 py-1 rounded-full">
-                        {m.name}
-                      </span>
-                    ))}
-                  </div>
-                ) : selectedMajor ? (
-                  <span className="text-blue-600 font-medium">
-                    {selectedMajor.name}で検索
-                  </span>
-                ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-bold bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">{selectedMajor?.name}</span>
+                  {selectedMediums.map(m => (
+                    <span key={m.id} className="bg-gray-200 text-gray-800 text-xs font-medium px-2 py-1 rounded-full">
+                      {m.name}
+                    </span>
+                  ))}
+                </div>
+              ) : selectedMajor ? (
+                <span className="text-blue-600 font-medium">
+                  {selectedMajor.name}で検索
+                </span>
+              ) : (
                   <span className="text-gray-500">職種を選択してください</span>
                 )
               ) : (
@@ -2261,202 +2261,6 @@ export default function StaffPage() {
                       }}
                     >
                       送信
-                    </button>
-                  </div>
-                </Dialog.Panel>
-              </Transition.Child>
-            </div>
-          </div>
-        </Dialog>
-      </Transition>
-
-      {/* 経歴書から選ぶ */}
-      <div className="mt-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">経歴書から選ぶ</label>
-        <button
-          type="button"
-          onClick={() => setIsCareerHistoryModalOpen(true)}
-          className="relative w-full flex items-center border rounded-md p-2.5 text-left text-gray-900 bg-gray-50/50 hover:bg-gray-100 transition"
-        >
-          {selectedCareerMediums.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-bold bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">{selectedCareerMajor?.name}</span>
-              {selectedCareerMediums.map(m => (
-                <span key={m.id} className="bg-gray-200 text-gray-800 text-xs font-medium px-2 py-1 rounded-full">
-                  {m.name}
-                </span>
-              ))}
-            </div>
-          ) : selectedCareerMajor ? (
-            <span className="text-blue-600 font-medium">
-              {selectedCareerMajor.name}で検索
-            </span>
-          ) : (
-            <span className="text-gray-500">職種を選択してください</span>
-          )}
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-          </div>
-        </button>
-      </div>
-      
-      {selectedCareerMajor && (
-        <div className="mt-6">
-          <DynamicSearchForm 
-            key={`career-${selectedCareerMajor?.id || 'none'}`} 
-            selectedMajorId={selectedCareerMajor?.id || null} 
-            modalState={careerSkillModalState} 
-            setModalState={setCareerSkillModalState} 
-            selections={careerSkillSelections} 
-            setSelections={setCareerSkillSelections} 
-            otherTexts={careerSkillOtherTexts} 
-            setOtherTexts={setCareerSkillOtherTexts} 
-          />
-        </div>
-      )}
-
-      {/* 経歴書から選ぶ職種選択モーダル */}
-      <Transition appear show={isCareerHistoryModalOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-50" onClose={() => setIsCareerHistoryModalOpen(false)} static>
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-black/30" onClick={(e) => e.stopPropagation()} />
-          </Transition.Child>
-
-          <div className="fixed inset-0 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex min-h-full items-center justify-center p-4 text-center">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
-              >
-                <Dialog.Panel 
-                  className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Dialog.Title as="h3" className="text-lg font-bold leading-6 text-gray-900 flex justify-between items-center">
-                    経歴書から選ぶ - 職種を選択
-                    <button onClick={() => setIsCareerHistoryModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                      <Icon path={mdiClose} size={1} />
-                    </button>
-                  </Dialog.Title>
-                  <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4" style={{minHeight: '400px'}}>
-                    {/* 職種（大） */}
-                    <div className="border-r pr-4">
-                      <div className="flex items-center border-b pb-2 mb-2" style={{ minHeight: '42px' }}>
-                        <h4 className="text-sm font-semibold text-gray-500">職種（大）</h4>
-                      </div>
-                      <ul>
-                        {jobCategories.map(category => (
-                          <li key={category.id}>
-                            <button
-                              onClick={() => {
-                                setSelectedCareerMajor(category);
-                                setSelectedCareerMediums([]);
-                              }}
-                              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                                selectedCareerMajor?.id === category.id
-                                  ? 'bg-blue-50 text-blue-700 font-medium'
-                                  : 'hover:bg-gray-100'
-                              }`}
-                            >
-                              {category.name}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    {/* 職種（中） */}
-                    <div className="border-r pr-4">
-                      <div className="flex items-center justify-between border-b pb-2 mb-2" style={{ minHeight: '42px' }}>
-                        <h4 className="text-sm font-semibold text-gray-500">職種（中）</h4>
-                        {selectedCareerMajor && selectedCareerMajor.children && selectedCareerMajor.children.length > 0 && (
-                          <button
-                            onClick={handleCareerSelectAllMediums}
-                            className="text-xs text-blue-600 hover:text-blue-800"
-                          >
-                            {selectedCareerMediums.length === selectedCareerMajor.children.length ? '全解除' : '全選択'}
-                          </button>
-                        )}
-                      </div>
-                      <ul>
-                        {selectedCareerMajor?.children?.map(medium => (
-                          <li key={medium.id}>
-                            <label className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 cursor-pointer transition-colors ${
-                              selectedCareerMediums.some(m => m.id === medium.id) ? 'bg-blue-50' : 'hover:bg-gray-100'
-                            }`} onClick={(e) => e.stopPropagation()}>
-                              <input
-                                type="checkbox"
-                                checked={selectedCareerMediums.some(m => m.id === medium.id)}
-                                onChange={() => {
-                                  setSelectedCareerMediums(prev =>
-                                    prev.some(m => m.id === medium.id)
-                                      ? prev.filter(m => m.id !== medium.id)
-                                      : [...prev, medium]
-                                  );
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                              />
-                              {medium.name}
-                            </label>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    {/* 選択済み */}
-                    <div>
-                      <div className="flex items-center justify-between border-b pb-2 mb-2" style={{ minHeight: '42px' }}>
-                        <h4 className="text-sm font-semibold text-gray-500">選択済み</h4>
-                        {selectedCareerMediums.length > 0 && (
-                          <button
-                            onClick={() => setSelectedCareerMediums([])}
-                            className="text-xs text-red-600 hover:text-red-800"
-                          >
-                            クリア
-                          </button>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        {selectedCareerMediums.map(medium => (
-                          <div key={medium.id} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
-                            <span className="text-sm">{medium.name}</span>
-                            <button
-                              onClick={() => setSelectedCareerMediums(prev => prev.filter(m => m.id !== medium.id))}
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-6 flex justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setIsCareerHistoryModalOpen(false)}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                    >
-                      キャンセル
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsCareerHistoryModalOpen(false)}
-                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
-                    >
-                      確定
                     </button>
                   </div>
                 </Dialog.Panel>
